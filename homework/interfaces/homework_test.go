@@ -1,9 +1,15 @@
 package main
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	errConstructorNotExist  = errors.New("constructor not exist")
+	errTypeConversionFailed = errors.New("type conversion failed")
 )
 
 // go test -v homework_test.go
@@ -18,21 +24,31 @@ type MessageService struct {
 }
 
 type Container struct {
-	// need to implement
+	dependencies map[string]interface{}
 }
 
 func NewContainer() *Container {
-	// need to implement
-	return &Container{}
+	return &Container{
+		dependencies: make(map[string]interface{}),
+	}
 }
 
 func (c *Container) RegisterType(name string, constructor interface{}) {
-	// need to implement
+	c.dependencies[name] = constructor
 }
 
 func (c *Container) Resolve(name string) (interface{}, error) {
-	// need to implement
-	return nil, nil
+	constructor, ok := c.dependencies[name]
+	if !ok {
+		return nil, errConstructorNotExist
+	}
+
+	f, ok := constructor.(func() interface{})
+	if !ok {
+		return nil, errTypeConversionFailed
+	}
+
+	return f(), nil
 }
 
 func TestDIContainer(t *testing.T) {
