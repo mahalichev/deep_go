@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 	"unsafe"
 
@@ -11,7 +12,38 @@ import (
 // go test -v homework_test.go
 
 func Defragment(memory []byte, pointers []unsafe.Pointer) {
-	// need to implement
+	pLen := len(pointers)
+	nextToMove := 0
+
+	for i := range memory {
+		// memory defragmented
+		if nextToMove == pLen {
+			return
+		}
+
+		p := unsafe.Pointer(&memory[i])
+
+		// skip if address in use
+		if slices.Contains(pointers, p) {
+			continue
+		}
+
+		// if pointer[d] is less than p, it means that pointer[d] is already in the defragmented area
+		for nextToMove < pLen && uintptr(pointers[nextToMove]) < uintptr(p) {
+			nextToMove++
+		}
+
+		// memory defragmented
+		if nextToMove == pLen {
+			return
+		}
+
+		memory[i] = *(*byte)(pointers[nextToMove])
+		*(*byte)(pointers[nextToMove]) = 0
+		pointers[nextToMove] = p
+
+		nextToMove++
+	}
 }
 
 func TestDefragmentation(t *testing.T) {
