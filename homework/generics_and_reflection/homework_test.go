@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"reflect"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +20,37 @@ type Person struct {
 }
 
 func Serialize(person Person) string {
-	// need to implement
-	return ""
+	b := strings.Builder{}
+
+	p := reflect.ValueOf(person)
+	tpe := reflect.TypeOf(person)
+
+	numField := tpe.NumField()
+
+	for i := range numField {
+		tags := strings.Split(tpe.Field(i).Tag.Get("properties"), ",")
+
+		if len(tags) == 0 {
+			continue
+		}
+
+		name := tags[0]
+		value := p.Field(i)
+
+		omitempty := len(tags) > 1 && slices.Contains(tags[1:], "omitempty")
+
+		if value.IsZero() && omitempty {
+			continue
+		}
+
+		_, _ = b.WriteString(fmt.Sprintf("%s=%v", name, value))
+
+		if i != numField-1 {
+			_, _ = b.WriteRune('\n')
+		}
+	}
+
+	return b.String()
 }
 
 func TestSerialization(t *testing.T) {
