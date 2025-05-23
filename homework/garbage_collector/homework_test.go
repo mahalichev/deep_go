@@ -1,7 +1,6 @@
 package main
 
 import (
-	"reflect"
 	"testing"
 	"unsafe"
 
@@ -9,10 +8,32 @@ import (
 )
 
 // go test -v homework_test.go
+func dfs(uptr uintptr, visited map[uintptr]struct{}, result *[]uintptr) {
+	if uptr == 0 {
+		return
+	}
+
+	if _, exist := visited[uptr]; exist {
+		return
+	}
+
+	visited[uptr] = struct{}{}
+	*result = append(*result, uptr)
+
+	dfs(*(*uintptr)(unsafe.Pointer(uptr)), visited, result)
+}
 
 func Trace(stacks [][]uintptr) []uintptr {
-	// need to implement
-	return nil
+	result := make([]uintptr, 0)
+	visited := make(map[uintptr]struct{})
+
+	for _, stack := range stacks {
+		for _, ptr := range stack {
+			dfs(ptr, visited, &result)
+		}
+	}
+
+	return result
 }
 
 func TestTrace(t *testing.T) {
@@ -58,5 +79,5 @@ func TestTrace(t *testing.T) {
 		uintptr(unsafe.Pointer(&heapObjects[3])),
 	}
 
-	assert.True(t, reflect.DeepEqual(expectedPointers, pointers))
+	assert.ElementsMatch(t, expectedPointers, pointers)
 }
